@@ -23,7 +23,7 @@
   }
 
   /* ---------- Background carpet video (AU FOND) ---------- */
-  #bgv{position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; filter:blur(7px) brightness(.5) saturate(1.18); transform:scale(1.06)}
+  #bgv{position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; filter:saturate(1.12) contrast(1.04)}
   .vignette{
     position:fixed; inset:0; z-index:-2; pointer-events:none; transition:background .8s ease;
     background:
@@ -438,6 +438,7 @@
     <div id="asstCap"></div>
     <div id="asstHint">🎤 اطلب أُمنيتك — parle au génie</div>
     <div id="confirmBar"><button class="chip" id="yesBtn">نعم، حلّهم ✓</button><button class="chip alt" id="noBtn">لا، شكراً ✗</button></div>
+    <button id="routeBtn" class="chip" style="display:none">🗺️ افتح المسار</button>
     <div class="chips" id="appChips"></div>
     <button id="micBtn" aria-label="Parler">🎤</button>
   </div>
@@ -570,8 +571,7 @@
     streamUntil = nowts() + 1150;                 // smoke pours out of the lamp's head
     for(var k=0;k<6;k++) jet();                   // initial gush
     setTimeout(function(){ genie.classList.add('show'); }, 900);  // then condenses into the genie
-    setTimeout(function(){ speak(); }, 1280);
-    setTimeout(showAssistant, 2700);
+    setTimeout(function(){ speakText('شُبيك لُبيك، الدُّنيا بين يديك', function(){ showAssistant(); setTimeout(function(){ speakText('مرحبا بكم في عالمي الجميل، أنا فرحوم، بتسهيل حياتكم', null, true); }, 250); }, true); }, 1280);
     clearInterval(idleTimer);
     idleTimer=setInterval(function(){ var s=spout();
       addSmokeV(s.x+(Math.random()*18-9), s.y,'smoke',0.5+Math.random()*0.4,(0.5+Math.random()*1.1),-(1.0+Math.random()*1.4));
@@ -617,8 +617,7 @@
   V.play().catch(function(){});
   document.addEventListener('pointerdown', function once(){ V.play().catch(function(){}); document.removeEventListener('pointerdown', once); });
 
-  // ================= GENIE VOICE CONCIERGE (comme LORD SYSTEM) =================
-  // URLs = nom du repo + .kieda.online  (modifie/ajoute librement)
+  // ================= FARHOUM — GENIE CONCIERGE (résultats + chemin le plus court) =================
   var APPS=[
     {n:'مَساري', e:'\uD83D\uDDFA\uFE0F', u:'https://masari.kieda.online'},
     {n:'صلاتي', e:'\uD83D\uDD4C', u:'https://salati.kieda.online'},
@@ -626,22 +625,55 @@
     {n:'دابي', e:'\uD83C\uDFE7', u:'https://dabi.kieda.online'},
     {n:'محطتي', e:'\u26FD', u:'https://mahattati.kieda.online'},
     {n:'مصرفي', e:'\uD83D\uDCB3', u:'https://masrifi.kieda.online'},
-    {n:'طبيبي', e:'\uD83E\uDDB7', u:'https://dentiste.kieda.online'},
+    {n:'طبيب الأسنان', e:'\uD83E\uDDB7', u:'https://dentiste.kieda.online'},
     {n:'البيطري', e:'\uD83D\uDC3E', u:'https://albaytari.kieda.online'},
     {n:'نظاراتي', e:'\uD83D\uDC41\uFE0F', u:'https://nadharati.kieda.online'},
-    {n:'مترجمي', e:'\uD83D\uDDE3\uFE0F', u:'https://moutarjem.kieda.online'}
+    {n:'مترجمي', e:'\uD83D\uDDE3\uFE0F', u:'https://moutarjem.kieda.online'},
+    {n:'مطاعمي', e:'\uD83C\uDF7D\uFE0F', u:'https://mataaimi.kieda.online'},
+    {n:'قهوتي', e:'\u2615', u:'https://quahwati.kieda.online'},
+    {n:'نزلي', e:'\uD83C\uDFE8', u:'https://nozli.kieda.online'},
+    {n:'صالوني', e:'\uD83D\uDC88', u:'https://hallaqui.kieda.online'},
+    {n:'الجزّار', e:'\uD83E\uDD69', u:'https://jazzar.kieda.online'},
+    {n:'متجري', e:'\uD83D\uDED2', u:'https://hypermarket.kieda.online'},
+    {n:'طبيبي', e:'\uD83C\uDFE5', u:'https://tabibialam.kieda.online'},
+    {n:'سيّاراتي', e:'\uD83D\uDE97', u:'https://sayarati.kieda.online'},
+    {n:'راديو الكرة', e:'\u26BD', u:'https://kouratalkadam.kieda.online'},
+    {n:'إذاعتي', e:'\uD83D\uDCFB', u:'https://idhaati.kieda.online'},
+    {n:'مائدتي', e:'\uD83E\uDD57', u:'https://maydati.kieda.online'},
+    {n:'الطوارئ', e:'\uD83D\uDE91', u:'https://urgence.kieda.online'}
   ];
+  var CATS=[
+    {ar:'صيدلية', kw:['صيدلي','دواء','pharmac'], q:'node["amenity"="pharmacy"]'},
+    {ar:'صرّاف', kw:['صراف','distributeur','atm'], q:'node["amenity"="atm"]'},
+    {ar:'بنك', kw:['بنك','مصرف','banque','bank'], q:'node["amenity"="bank"]'},
+    {ar:'محطة وقود', kw:['محطة','بنزين','وقود','carburant','essence','station'], q:'node["amenity"="fuel"]'},
+    {ar:'جامع', kw:['جامع','مسجد','صلا','mosqu','prière','priere'], q:'node["amenity"="place_of_worship"]["religion"="muslim"]'},
+    {ar:'مستشفى', kw:['مستشفى','hopital','urgence','طوارئ','clinique'], q:'node["amenity"="hospital"]'},
+    {ar:'طبيب أسنان', kw:['أسنان','سنان','dentiste','dentist'], q:'node["amenity"="dentist"]'},
+    {ar:'بيطري', kw:['بيطري','vétér','veterin','حيوان'], q:'node["amenity"="veterinary"]'},
+    {ar:'نظارات', kw:['نظار','optic','عينين'], q:'node["shop"="optician"]'},
+    {ar:'مطعم', kw:['مطعم','restaurant','ماكلة'], q:'node["amenity"="restaurant"]'},
+    {ar:'قهوة', kw:['قهوة','cafe','café','قهاوي'], q:'node["amenity"="cafe"]'},
+    {ar:'نزل', kw:['نزل','hotel','hôtel','فندق'], q:'node["tourism"="hotel"]'},
+    {ar:'حلاق', kw:['حلاق','coiffeur','صالون'], q:'node["shop"="hairdresser"]'},
+    {ar:'جزّار', kw:['جزار','boucher','لحم'], q:'node["shop"="butcher"]'},
+    {ar:'سوق', kw:['سوبرماركت','supermarch','marché','سوق','متجر'], q:'node["shop"="supermarket"]'}
+  ];
+
   var asst=document.getElementById('asst'), micBtn=document.getElementById('micBtn'),
       asstCap=document.getElementById('asstCap'), asstHint=document.getElementById('asstHint'),
-      confirmBar=document.getElementById('confirmBar'), appChips=document.getElementById('appChips');
+      confirmBar=document.getElementById('confirmBar'), appChips=document.getElementById('appChips'),
+      routeBtn=document.getElementById('routeBtn');
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition, recog=null, listening=false, asstShown=false;
+  var _pos=null, pendingRoute=null;
 
   function setCap(t){ if(!asstCap) return; asstCap.textContent=t||''; asstCap.classList.toggle('show',!!t); }
   function setHint(t){ if(asstHint) asstHint.textContent=t; }
   function showConfirm(on){ if(confirmBar) confirmBar.classList.toggle('on',!!on); }
+  function setRoute(url,label){ if(!routeBtn) return; if(url){ pendingRoute=url; routeBtn.textContent=label||'\uD83D\uDDFA\uFE0F افتح المسار'; routeBtn.style.display='inline-block'; } else { pendingRoute=null; routeBtn.style.display='none'; } }
 
-  function speakText(text, onend){
-    setCap(text);
+  function speakText(text, onend, noCap){
+    if(!noCap) setCap(text);
     if(!soundOn || !('speechSynthesis' in window)){ if(onend) setTimeout(onend,500); return; }
     try{ speechSynthesis.cancel();
       var u=new SpeechSynthesisUtterance(text), v=arVoice(); if(v) u.voice=v;
@@ -652,6 +684,36 @@
       speechSynthesis.speak(u);
     }catch(e){ if(onend) onend(); }
   }
+
+  function getPos(){ return new Promise(function(res,rej){
+    if(_pos){ res(_pos); return; }
+    if(!navigator.geolocation){ rej('nogeo'); return; }
+    navigator.geolocation.getCurrentPosition(function(p){ _pos={lat:p.coords.latitude,lng:p.coords.longitude}; res(_pos); },
+      function(){ rej('denied'); }, {enableHighAccuracy:true, timeout:11000, maximumAge:60000});
+  }); }
+  function haversine(a,b,c,d){ var R=6371000,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t,
+    h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2); return 2*R*Math.asin(Math.sqrt(h)); }
+  function distTxt(m){ return m<1000? Math.round(m)+' متر' : (m/1000).toFixed(1)+' كم'; }
+  async function overpass(filter,lat,lng,r){
+    var q='[out:json][timeout:25];('+filter+'(around:'+r+','+lat+','+lng+'););out body 40;';
+    var res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)});
+    var j=await res.json(); return j.elements||[];
+  }
+  async function findNearest(cat,pos){
+    var radii=[2500,7000,18000], els=[], i;
+    for(i=0;i<radii.length;i++){ try{ els=await overpass(cat.q,pos.lat,pos.lng,radii[i]); }catch(e){ els=[]; } if(els.length) break; }
+    var best=null,bd=1e12;
+    els.forEach(function(e){ var la=e.lat||(e.center&&e.center.lat), ln=e.lon||(e.center&&e.center.lon); if(la==null) return;
+      var d=haversine(pos.lat,pos.lng,la,ln); if(d<bd){ bd=d; best={name:(e.tags&&e.tags.name)||cat.ar,lat:la,lng:ln,dist:d}; } });
+    return best;
+  }
+  function orderRoute(pos,items){ var cur={lat:pos.lat,lng:pos.lng}, left=items.slice(), out=[];
+    while(left.length){ var bi=0,bd=1e12,i; for(i=0;i<left.length;i++){ var d=haversine(cur.lat,cur.lng,left[i].poi.lat,left[i].poi.lng); if(d<bd){bd=d;bi=i;} }
+      var n=left.splice(bi,1)[0]; out.push(n); cur={lat:n.poi.lat,lng:n.poi.lng}; } return out; }
+  function mapsDir(pos,ordered){ var pts=ordered.map(function(o){return o.poi.lat+','+o.poi.lng;}),
+    dest=pts[pts.length-1], wp=pts.slice(0,-1).join('|'),
+    u='https://www.google.com/maps/dir/?api=1&origin='+pos.lat+','+pos.lng+'&destination='+dest+'&travelmode=driving';
+    if(wp) u+='&waypoints='+encodeURIComponent(wp); return u; }
 
   function startListen(mode){
     if(!SR) return;
@@ -668,8 +730,7 @@
 
   function handleSpeech(t,mode){
     if(mode==='confirm'){
-      var yes=/(نعم|اي|إيه|ايه|اييه|oui|yes|ok|باهي|افتح|حل|دافور)/i.test(t);
-      var no=/(لا|non|no|موش|ماني|بلا|خليها|أبدا)/i.test(t);
+      var yes=/(نعم|اي|إيه|ايه|oui|yes|ok|باهي|افتح|حل)/i.test(t), no=/(لا|non|no|موش|بلا|خليها)/i.test(t);
       if(yes && !no) doOpen(); else if(no) declineOpen();
       else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
       return;
@@ -677,30 +738,46 @@
     handleIntent(t);
   }
 
+  function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
   function handleIntent(t){
-    var q=(t||'').toLowerCase();
+    var q=(t||'').toLowerCase(); setRoute(null);
     function has(){ for(var i=0;i<arguments.length;i++){ if(q.indexOf(arguments[i])>=0) return true; } return false; }
-    if(has('itiner','مسار','طريق','route','trajet','وين','نمشي','نوصل','قاد','navig','aller','اذهب')){ askItinerary(); return; }
-    if(has('تطبيق','application',' app','افتح','حل')){ askOpen(); return; }
+    var hits=catsIn(q);
+    if(hits.length>=2){ doMulti(hits); return; }
+    if(hits.length===1){ doSingle(hits[0]); return; }
+    if(has('itiner','مسار','طريق','route','trajet','وين','نمشي','نوصل','قاد','navig')){ askItinerary(); return; }
+    if(has('تطبيق','application','افتح','حل')){ askOpen(); return; }
     var r, offer=false;
-    if(has('سلام','اسلامة','اهلا','أهلا','صباح','مساء','salam','aslema','bonjour','salut')){ r='أهلا و سهلا بيك يا صاحبي! شُبيك لُبيك. تحب نحضّرلك المسار؟'; offer=true; }
-    else if(has('صلا','salat','pri','أذان','اذان','جامع','مسجد')) r='مواقيت الصلاة و الجامع الأقرب تلقاهم في صلاتي.';
-    else if(has('صيدلي','دواء','pharmac')) r='أقرب صيدلية تلقاها في صَيْدَليتي.';
-    else if(has('صراف','dab','atm','بنك','مصرف','banque','فلوس')) r='الصرّاف و البنك الأقرب تلقاهم في دابي و مصرفي.';
-    else if(has('شكون','من انت','qui','quoi')) r='أنا جنّي المصباح، خادمك! شُبيك لُبيك الدنيا بين يديك.';
+    if(has('سلام','اسلامة','اهلا','أهلا','صباح','مساء','salam','aslema','bonjour','salut')){ r='أهلا و سهلا بيك! أنا فرحوم، خادمك. قولّي شنوّة تلوّج عليه؟'; offer=true; }
+    else if(has('شكون','من انت','qui','quoi','فرحوم')) r='أنا فرحوم، جنّي المصباح، نسهّلّك حياتك. اطلب صيدلية، صرّاف، محطة... و نلقيهملك!';
     else if(has('شكرا','merci','يعيشك','يعيش')) r='بلا مزيّة يا سيدي، أنا في خدمتك ديما.';
-    else { r='شُبيك لُبيك! نجّم نحضّرلك المسار و نحلّك تطبيقات LORD SYSTEM. تحب؟'; offer=true; }
+    else { r='قولّي شنوّة تحتاج: صيدلية، صرّاف، محطة، جامع... و نلقيلك الأقرب. و لو تحب برشة حاجات نحسبلك الطريق الأقصر.'; offer=true; }
     speakText(r, function(){ if(offer) askOpen(); });
   }
 
-  function askItinerary(){
-    showConfirm(false);
-    speakText('على بركة الله يا سيدي، حضّرتلك المسار. اتبع الطريق اللي قدّامك و توكّل على الله.', function(){ askOpen(); });
+  async function doSingle(cat){
+    setRoute(null); speakText('ثواني يا سيدي، نلوّج على أقرب '+cat.ar+'\u2026');
+    try{ var pos=await getPos(), poi=await findNearest(cat,pos);
+      if(!poi){ speakText('ما لقيتش '+cat.ar+' قريب منك، جرّب مرّة أخرى.'); return; }
+      speakText('أقرب '+cat.ar+' هو '+poi.name+'، على بُعد '+distTxt(poi.dist)+' منك.');
+      setRoute('https://www.google.com/maps/search/?api=1&query='+poi.lat+','+poi.lng, '\uD83D\uDCCD شوفها في الخريطة');
+    }catch(e){ speakText('لازمني نعرف موقعك باش نلقيلك. فعّل الـ GPS و عاود.'); }
   }
-  function askOpen(){
-    speakText('تحب نحلّك التطبيقات؟', function(){ showConfirm(true); setHint('قول «نعم» — ولّا اضغط'); startListen('confirm'); });
+  async function doMulti(cats){
+    setRoute(null); speakText('على بركة الله، نحسبلك المسار الأقصر\u2026');
+    try{ var pos=await getPos(), items=[], i;
+      for(i=0;i<cats.length;i++){ var p=await findNearest(cats[i],pos); if(p) items.push({cat:cats[i],poi:p}); }
+      if(!items.length){ speakText('ما لقيت حتى بلاصة قريبة، عاود.'); return; }
+      var ordered=orderRoute(pos,items), names=ordered.map(function(o){return o.cat.ar;});
+      speakText('المسار الأقصر يا سيدي: '+names.join('، ثم ')+'. حلّ الخريطة و توكّل.');
+      setRoute(mapsDir(pos,ordered), '\uD83D\uDDFA\uFE0F المسار الأقصر');
+    }catch(e){ speakText('لازمني نعرف موقعك باش نحسب المسار. فعّل الـ GPS.'); }
   }
-  function doOpen(){ showConfirm(false); stopListen(); speakText('شُبيك لُبيك! حلّيتلك التطبيقات يا سيدي \uD83C\uDF1F'); openAppsPanel(APPS.slice(0,6)); }
+
+  function askItinerary(){ showConfirm(false); speakText('قولّي وين تحب تمشي، ولّا اطلب بلايص (صيدلية، صرّاف...) و نحسبلك الطريق الأقصر. تحب نحلّك التطبيقات؟', function(){ askOpenSilent(); }); }
+  function askOpen(){ speakText('تحب نحلّك التطبيقات؟', function(){ askOpenSilent(); }); }
+  function askOpenSilent(){ showConfirm(true); setHint('قول «نعم» — ولّا اضغط'); startListen('confirm'); }
+  function doOpen(){ showConfirm(false); stopListen(); speakText('شُبيك لُبيك! حلّيتلك التطبيقات يا سيدي \uD83C\uDF1F'); openAppsPanel(APPS); }
   function declineOpen(){ showConfirm(false); stopListen(); speakText('كيف ما تحب يا صاحبي، أنا هوني وقت اللي تحتاجني.'); }
 
   function openAppsPanel(list){
@@ -719,7 +796,7 @@
   function closeApps(){ var p=document.getElementById('appsPanel'), grid=document.getElementById('appsGrid'); if(p) p.classList.remove('on'); if(grid) grid.innerHTML=''; document.body.classList.remove('apps-open'); }
 
   function showAssistant(){ if(asstShown) return; asstShown=true; if(asst) asst.classList.add('on'); if(!SR && micBtn) micBtn.style.display='none'; }
-  function hideAssistant(){ asstShown=false; if(asst) asst.classList.remove('on'); showConfirm(false); stopListen(); setCap(''); closeApps(); }
+  function hideAssistant(){ asstShown=false; if(asst) asst.classList.remove('on'); showConfirm(false); stopListen(); setCap(''); setRoute(null); closeApps(); }
 
   (function(){
     if(appChips){
@@ -727,6 +804,7 @@
       APPS.forEach(function(a){ var c=document.createElement('button'); c.className='chip alt'; c.textContent=a.e+' '+a.n; c.onclick=function(){ openAppsPanel([a]); }; appChips.appendChild(c); });
     }
     if(micBtn) micBtn.addEventListener('click', function(){ startListen('free'); });
+    if(routeBtn) routeBtn.addEventListener('click', function(){ if(pendingRoute) window.open(pendingRoute,'_blank'); });
     var yb=document.getElementById('yesBtn'), nb=document.getElementById('noBtn'), ac=document.getElementById('appsClose');
     if(yb) yb.addEventListener('click', doOpen);
     if(nb) nb.addEventListener('click', declineOpen);
