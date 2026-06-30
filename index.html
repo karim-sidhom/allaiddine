@@ -429,16 +429,16 @@
         </g>
       </svg>
     </div>
-    <div id="hint">✦ اِفْرُك أو اِلْمَسِ المِصْباح ✦</div>
+    <div id="hint">✦ اِفْرُكِ المِصْباحَ أو اِلْمَسْهُ ✦</div>
     <div id="meter"><i></i></div>
   </div>
 
   <!-- ===== Genie voice concierge ===== -->
   <div id="asst" aria-hidden="true">
     <div id="asstCap"></div>
-    <div id="asstHint">🎤 اطلب أُمنيتك — parle au génie</div>
-    <div id="confirmBar"><button class="chip" id="yesBtn">نعم، حلّهم ✓</button><button class="chip alt" id="noBtn">لا، شكراً ✗</button></div>
-    <button id="routeBtn" class="chip" style="display:none">🗺️ افتح المسار</button>
+    <div id="asstHint">🎤 تَفَضَّلْ بطلبِكَ — parle au génie</div>
+    <div id="confirmBar"><button class="chip" id="yesBtn">نَعَمْ، افتَحْها ✓</button><button class="chip alt" id="noBtn">لا، شُكراً ✗</button></div>
+    <button id="routeBtn" class="chip" style="display:none">🗺️ افتَحِ المسار</button>
     <div class="chips" id="appChips"></div>
     <button id="micBtn" aria-label="Parler">🎤</button>
   </div>
@@ -558,7 +558,7 @@
     for(i=0;i<vs.length;i++){ if(/arab/i.test(vs[i].name)) return vs[i]; } return null; }
   function speak(){
     if(!soundOn || !('speechSynthesis' in window)) return;
-    try{ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance('شُبيك لُبيك، الدنيا بين يديك');
+    try{ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance('لبَّيكَ يا سيدي، أنا رهنُ إشارتِك');
       var v=arVoice(); if(v) u.voice=v; u.lang='ar-SA'; u.rate=0.82; u.pitch=0.55; u.volume=1;
       speechSynthesis.speak(u);
     }catch(e){}
@@ -571,7 +571,7 @@
     streamUntil = nowts() + 1150;                 // smoke pours out of the lamp's head
     for(var k=0;k<6;k++) jet();                   // initial gush
     setTimeout(function(){ genie.classList.add('show'); }, 900);  // then condenses into the genie
-    setTimeout(function(){ speakText('شُبيك لُبيك، الدُّنيا بين يديك', function(){ showAssistant(); setTimeout(function(){ speakText('مرحبا بكم في عالمي الجميل، أنا فرحوم، بتسهيل حياتكم', null, true); }, 250); }, true); }, 1280);
+    setTimeout(function(){ speakText('لبَّيكَ يا سيدي، أنا رهنُ إشارتِك', function(){ showAssistant(); setTimeout(function(){ speakText('مرحباً بكَ في عالَمي، أنا فَرْحوم، جِنِّيُّ المِصْباح، في خدمتِك', null, true); }, 250); }, true); }, 1280);
     clearInterval(idleTimer);
     idleTimer=setInterval(function(){ var s=spout();
       addSmokeV(s.x+(Math.random()*18-9), s.y,'smoke',0.5+Math.random()*0.4,(0.5+Math.random()*1.1),-(1.0+Math.random()*1.4));
@@ -677,7 +677,7 @@
     if(!soundOn || !('speechSynthesis' in window)){ if(onend) setTimeout(onend,500); return; }
     try{ speechSynthesis.cancel();
       var u=new SpeechSynthesisUtterance(text), v=arVoice(); if(v) u.voice=v;
-      u.lang='ar-SA'; u.rate=0.92; u.pitch=0.6; u.volume=1;
+      u.lang='ar-SA'; u.rate=0.82; u.pitch=0.55; u.volume=1;
       if(genie) genie.classList.add('talking');
       u.onend=function(){ if(genie) genie.classList.remove('talking'); if(onend) onend(); };
       u.onerror=function(){ if(genie) genie.classList.remove('talking'); if(onend) onend(); };
@@ -720,7 +720,7 @@
     try{ if(recog) recog.abort(); }catch(e){}
     try{ recog=new SR(); }catch(e){ return; }
     recog.lang='ar-SA'; recog.interimResults=false; recog.maxAlternatives=3; recog.continuous=false;
-    listening=true; if(asst) asst.classList.add('listening'); setHint('\u2026 نسمعك يا سيدي');
+    listening=true; if(asst) asst.classList.add('listening'); setHint('… أصغي إليكَ يا سيدي');
     recog.onresult=function(ev){ var t=''; for(var i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript+' '; handleSpeech(t.trim(),mode); };
     recog.onerror=function(){ stopListen(); };
     recog.onend=function(){ listening=false; if(asst) asst.classList.remove('listening'); };
@@ -732,7 +732,7 @@
     if(mode==='confirm'){
       var yes=/(نعم|اي|إيه|ايه|oui|yes|ok|باهي|افتح|حل)/i.test(t), no=/(لا|non|no|موش|بلا|خليها)/i.test(t);
       if(yes && !no) doOpen(); else if(no) declineOpen();
-      else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
+      else speakText('أرجوكَ قُلْ «نَعَمْ» لأفتحَ لكَ التطبيقاتِ، أو «لا» إنْ شِئتَ.', function(){ startListen('confirm'); });
       return;
     }
     handleIntent(t);
@@ -748,37 +748,37 @@
     if(has('itiner','مسار','طريق','route','trajet','وين','نمشي','نوصل','قاد','navig')){ askItinerary(); return; }
     if(has('تطبيق','application','افتح','حل')){ askOpen(); return; }
     var r, offer=false;
-    if(has('سلام','اسلامة','اهلا','أهلا','صباح','مساء','salam','aslema','bonjour','salut')){ r='أهلا و سهلا بيك! أنا فرحوم، خادمك. قولّي شنوّة تلوّج عليه؟'; offer=true; }
-    else if(has('شكون','من انت','qui','quoi','فرحوم')) r='أنا فرحوم، جنّي المصباح، نسهّلّك حياتك. اطلب صيدلية، صرّاف، محطة... و نلقيهملك!';
-    else if(has('شكرا','merci','يعيشك','يعيش')) r='بلا مزيّة يا سيدي، أنا في خدمتك ديما.';
-    else { r='قولّي شنوّة تحتاج: صيدلية، صرّاف، محطة، جامع... و نلقيلك الأقرب. و لو تحب برشة حاجات نحسبلك الطريق الأقصر.'; offer=true; }
+    if(has('سلام','اسلامة','اهلا','أهلا','صباح','مساء','salam','aslema','bonjour','salut')){ r='أهلاً وسهلاً بكَ أيُّها السيد! أنا فَرْحوم، خادمُكَ الأمين. فبِمَ تأذنُ لي أن أخدمَك؟'; offer=true; }
+    else if(has('شكون','من انت','qui','quoi','فرحوم')) r='أنا فَرْحوم، جِنِّيُّ المِصْباح الذهبي. أُيسِّرُ عليكَ أمورَك؛ اطلبْ صيدليةً، أو مَصرفاً، أو مَحطةً، فأهدِيَكَ إلى أقربِها.';
+    else if(has('شكرا','merci','يعيشك','يعيش')) r='لا شُكرَ على واجب يا سيدي، فأنا رهنُ إشارتِك في كلِّ حين.';
+    else { r='أخبِرني بحاجتِك: صيدليةٌ، مَصرفٌ، مَحطةُ وقود، مسجدٌ... فأدلَّكَ على أقربِها. وإنْ أردتَ عدةَ وجهاتٍ احتسبتُ لكَ أقصرَ مسار.'; offer=true; }
     speakText(r, function(){ if(offer) askOpen(); });
   }
 
   async function doSingle(cat){
-    setRoute(null); speakText('ثواني يا سيدي، نلوّج على أقرب '+cat.ar+'\u2026');
+    setRoute(null); speakText('لحظةً يا سيدي، أبحثُ لكَ عن أقربِ '+cat.ar+' ...');
     try{ var pos=await getPos(), poi=await findNearest(cat,pos);
-      if(!poi){ speakText('ما لقيتش '+cat.ar+' قريب منك، جرّب مرّة أخرى.'); return; }
-      speakText('أقرب '+cat.ar+' هو '+poi.name+'، على بُعد '+distTxt(poi.dist)+' منك.');
-      setRoute('https://www.google.com/maps/search/?api=1&query='+poi.lat+','+poi.lng, '\uD83D\uDCCD شوفها في الخريطة');
-    }catch(e){ speakText('لازمني نعرف موقعك باش نلقيلك. فعّل الـ GPS و عاود.'); }
+      if(!poi){ speakText('لم أعثُرْ على '+cat.ar+' قريبٍ منكَ، حاوِلْ مرةً أخرى من فضلِك.'); return; }
+      speakText('أقربُ '+cat.ar+' هو '+poi.name+'، على بُعدِ '+distTxt(poi.dist)+' منكَ.');
+      setRoute('https://www.google.com/maps/search/?api=1&query='+poi.lat+','+poi.lng, '📍 شاهِدْها على الخريطة');
+    }catch(e){ speakText('أحتاجُ إلى تحديدِ موقعِك كي أرشدَكَ. يُرجى تفعيلُ خاصيةِ تحديدِ الموقع والمحاولةُ ثانيةً.'); }
   }
   async function doMulti(cats){
-    setRoute(null); speakText('على بركة الله، نحسبلك المسار الأقصر\u2026');
+    setRoute(null); speakText('بسمِ الله، أحسبُ لكَ أقصرَ مسار...');
     try{ var pos=await getPos(), items=[], i;
       for(i=0;i<cats.length;i++){ var p=await findNearest(cats[i],pos); if(p) items.push({cat:cats[i],poi:p}); }
-      if(!items.length){ speakText('ما لقيت حتى بلاصة قريبة، عاود.'); return; }
+      if(!items.length){ speakText('لم أجِدْ أيَّ مكانٍ قريبٍ منكَ، يُرجى المحاولةُ ثانيةً.'); return; }
       var ordered=orderRoute(pos,items), names=ordered.map(function(o){return o.cat.ar;});
-      speakText('المسار الأقصر يا سيدي: '+names.join('، ثم ')+'. حلّ الخريطة و توكّل.');
-      setRoute(mapsDir(pos,ordered), '\uD83D\uDDFA\uFE0F المسار الأقصر');
-    }catch(e){ speakText('لازمني نعرف موقعك باش نحسب المسار. فعّل الـ GPS.'); }
+      speakText('أقصرُ مسارٍ يا سيدي: '+names.join('، ثم ')+'. افتحِ الخريطةَ وتوكَّلْ على الله.');
+      setRoute(mapsDir(pos,ordered), '🗺️ أقصرُ مسار');
+    }catch(e){ speakText('أحتاجُ إلى تحديدِ موقعِك لاحتسابِ المسار، يُرجى تفعيلُ خاصيةِ تحديدِ الموقع.'); }
   }
 
-  function askItinerary(){ showConfirm(false); speakText('قولّي وين تحب تمشي، ولّا اطلب بلايص (صيدلية، صرّاف...) و نحسبلك الطريق الأقصر. تحب نحلّك التطبيقات؟', function(){ askOpenSilent(); }); }
-  function askOpen(){ speakText('تحب نحلّك التطبيقات؟', function(){ askOpenSilent(); }); }
-  function askOpenSilent(){ showConfirm(true); setHint('قول «نعم» — ولّا اضغط'); startListen('confirm'); }
-  function doOpen(){ showConfirm(false); stopListen(); speakText('شُبيك لُبيك! حلّيتلك التطبيقات يا سيدي \uD83C\uDF1F'); openAppsPanel(APPS); }
-  function declineOpen(){ showConfirm(false); stopListen(); speakText('كيف ما تحب يا صاحبي، أنا هوني وقت اللي تحتاجني.'); }
+  function askItinerary(){ showConfirm(false); speakText('أخبِرني بوجهاتِك، أو اذكُرِ الأماكنَ التي تريدُها كالصيدليةِ والمَصرفِ، فأحتسبَ لكَ أقصرَ مسار. هل تريدُ فتحَ التطبيقات؟', function(){ askOpenSilent(); }); }
+  function askOpen(){ speakText('هل تريدُ أن أفتحَ لكَ التطبيقاتِ؟', function(){ askOpenSilent(); }); }
+  function askOpenSilent(){ showConfirm(true); setHint('قُلْ «نَعَمْ» — أو اضغط'); startListen('confirm'); }
+  function doOpen(){ showConfirm(false); stopListen(); speakText('حاضِرٌ يا سيدي! قد فتحتُ لكَ التطبيقاتِ 🌟'); openAppsPanel(APPS); }
+  function declineOpen(){ showConfirm(false); stopListen(); speakText('كما تشاءُ يا سيدي، أنا هنا في خدمتِك متى أحببتَ.'); }
 
   function openAppsPanel(list){
     var p=document.getElementById('appsPanel'), grid=document.getElementById('appsGrid'); if(!p||!grid) return;
