@@ -559,7 +559,7 @@
   function speak(){
     if(!soundOn || !('speechSynthesis' in window)) return;
     try{ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance('لبَّيكَ يا سيدي، أنا رهنُ إشارتِك');
-      var v=arVoice(); if(v) u.voice=v; u.lang='ar-SA'; u.rate=0.82; u.pitch=0.55; u.volume=1;
+      var v=arVoice(); if(v) u.voice=v; u.lang='ar-SA'; u.rate=1.0; u.pitch=0.55; u.volume=1;
       speechSynthesis.speak(u);
     }catch(e){}
   }
@@ -571,7 +571,7 @@
     streamUntil = nowts() + 1150;                 // smoke pours out of the lamp's head
     for(var k=0;k<6;k++) jet();                   // initial gush
     setTimeout(function(){ genie.classList.add('show'); }, 900);  // then condenses into the genie
-    setTimeout(function(){ speakText('لبَّيكَ يا سيدي، أنا رهنُ إشارتِك', function(){ showAssistant(); setTimeout(function(){ speakText('مرحباً بكَ في عالَمي، أنا فَرْحوم، جِنِّيُّ المِصْباح، في خدمتِك', null, true); }, 250); }, true); }, 1280);
+    setTimeout(function(){ speakText('شُبَّيْكْ لُبَّيْكْ! الدُّنْيا بَيْنْ إيدَيْكْ يا سيدي', function(){ showAssistant(); setTimeout(function(){ speakText('أنا فَرْحوم، جِنِّيُّ المِصْباحِ الأصْلِيّ، وهاكَ جَمَعْتُ لكَ كلَّ تطبيقاتِ kieda.online في مكانٍ واحد', null, true); }, 250); }, true); }, 1280);
     clearInterval(idleTimer);
     idleTimer=setInterval(function(){ var s=spout();
       addSmokeV(s.x+(Math.random()*18-9), s.y,'smoke',0.5+Math.random()*0.4,(0.5+Math.random()*1.1),-(1.0+Math.random()*1.4));
@@ -642,23 +642,42 @@
     {n:'مائدتي', e:'\uD83E\uDD57', u:'https://maydati.kieda.online'},
     {n:'الطوارئ', e:'\uD83D\uDE91', u:'https://urgence.kieda.online'}
   ];
+  // ---------- Normalisation arabe/fr/dialecte : pour une détection ultra-robuste ----------
+  function normTxt(s){
+    if(!s) return '';
+    s = s.toLowerCase();
+    s = s.replace(/[\u064B-\u0652\u0670\u0640]/g,'');           // tachkil + tatwil
+    s = s.replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/ئ/g,'ي');
+    s = s.replace(/[^\u0600-\u06FFa-z0-9 ]/g,' ');
+    return s.replace(/\s+/g,' ').trim();
+  }
+  function normKw(arr){ return arr.map(normTxt); }
+
   var CATS=[
-    {ar:'صيدلية', kw:['صيدلي','دواء','pharmac'], q:'node["amenity"="pharmacy"]'},
-    {ar:'صرّاف', kw:['صراف','distributeur','atm'], q:'node["amenity"="atm"]'},
-    {ar:'بنك', kw:['بنك','مصرف','banque','bank'], q:'node["amenity"="bank"]'},
-    {ar:'محطة وقود', kw:['محطة','بنزين','وقود','carburant','essence','station'], q:'node["amenity"="fuel"]'},
-    {ar:'جامع', kw:['جامع','مسجد','صلا','mosqu','prière','priere'], q:'node["amenity"="place_of_worship"]["religion"="muslim"]'},
-    {ar:'مستشفى', kw:['مستشفى','hopital','urgence','طوارئ','clinique'], q:'node["amenity"="hospital"]'},
-    {ar:'طبيب أسنان', kw:['أسنان','سنان','dentiste','dentist'], q:'node["amenity"="dentist"]'},
-    {ar:'بيطري', kw:['بيطري','vétér','veterin','حيوان'], q:'node["amenity"="veterinary"]'},
-    {ar:'نظارات', kw:['نظار','optic','عينين'], q:'node["shop"="optician"]'},
-    {ar:'مطعم', kw:['مطعم','restaurant','ماكلة'], q:'node["amenity"="restaurant"]'},
-    {ar:'قهوة', kw:['قهوة','cafe','café','قهاوي'], q:'node["amenity"="cafe"]'},
-    {ar:'نزل', kw:['نزل','hotel','hôtel','فندق'], q:'node["tourism"="hotel"]'},
-    {ar:'حلاق', kw:['حلاق','coiffeur','صالون'], q:'node["shop"="hairdresser"]'},
-    {ar:'جزّار', kw:['جزار','boucher','لحم'], q:'node["shop"="butcher"]'},
-    {ar:'سوق', kw:['سوبرماركت','supermarch','marché','سوق','متجر'], q:'node["shop"="supermarket"]'}
+    {ar:'صيدلية', app:'saydaliati', kw:normKw(['صيدلي','صيدلية','دواء','ادوية','pharmaci','pharmacie']), q:'node["amenity"="pharmacy"]'},
+    {ar:'صرّاف', app:'masrifi', kw:normKw(['صراف','صراف الي','distributeur','atm','فلوس']), q:'node["amenity"="atm"]'},
+    {ar:'بنك', app:'masrifi', kw:normKw(['بنك','بنوك','مصرف','مصرفي','banque','bank','compte']), q:'node["amenity"="bank"]'},
+    {ar:'محطة وقود', app:'mahattati', kw:normKw(['محطة','محطه','بنزين','مازوط','وقود','قاز','carburant','essence','station','gasoil']), q:'node["amenity"="fuel"]'},
+    {ar:'جامع', app:'salati', kw:normKw(['جامع','مسجد','صلاة','صلاتي','صلي','prier','priere','prière','mosque','mosquee','اذان']), q:'node["amenity"="place_of_worship"]["religion"="muslim"]'},
+    {ar:'مستشفى', app:'tabibialam', kw:normKw(['مستشفى','مستشفي','طبيب','دكتور','hopital','hôpital','clinique','medecin']), q:'node["amenity"="hospital"]'},
+    {ar:'طوارئ', app:'urgence', kw:normKw(['طوارئ','استعجالي','urgence','urgent','emergency','نجده','نجدة']), q:'node["amenity"="hospital"]'},
+    {ar:'طبيب أسنان', app:'dentiste', kw:normKw(['اسنان','سنان','dentiste','dentist']), q:'node["amenity"="dentist"]'},
+    {ar:'بيطري', app:'albaytari', kw:normKw(['بيطري','veterinaire','vétérinaire','veterin','حيوان','قطوس','كلب']), q:'node["amenity"="veterinary"]'},
+    {ar:'نظارات', app:'nadharati', kw:normKw(['نظارات','نظاراتي','نظار','optic','opticien','عينين']), q:'node["shop"="optician"]'},
+    {ar:'مترجم', app:'moutarjem', kw:normKw(['مترجم','ترجمة','ترجم','traduire','traduction','translate']), q:''},
+    {ar:'مطعم', app:'mataaimi', kw:normKw(['مطعم','مطاعم','restaurant','ماكلة','نتغدى','نتعشى']), q:'node["amenity"="restaurant"]'},
+    {ar:'قهوة', app:'quahwati', kw:normKw(['قهوة','قهاوي','قهوتي','cafe','café','نقهوي']), q:'node["amenity"="cafe"]'},
+    {ar:'نزل', app:'nozli', kw:normKw(['نزل','نزلي','فندق','hotel','hôtel']), q:'node["tourism"="hotel"]'},
+    {ar:'حلاق', app:'hallaqui', kw:normKw(['حلاق','صالوني','صالون','coiffeur','coiffure']), q:'node["shop"="hairdresser"]'},
+    {ar:'جزّار', app:'jazzar', kw:normKw(['جزار','جزّار','boucher','لحم']), q:'node["shop"="butcher"]'},
+    {ar:'سوق', app:'hypermarket', kw:normKw(['سوبرماركت','supermarche','supermarché','marché','marche','سوق','متجري','متجر','hypermarket']), q:'node["shop"="supermarket"]'},
+    {ar:'تاكسي', app:'dabi', kw:normKw(['تاكسي','داب','دابي','taxi','نوصل']), q:'node["amenity"="taxi"]'},
+    {ar:'سيارات', app:'sayarati', kw:normKw(['سيارة','سيارتي','سيارات','voiture','auto','car']), q:''},
+    {ar:'مباراة', app:'kouratalkadam', kw:normKw(['كرة','مباراة','match','football','foot','كورة']), q:''},
+    {ar:'راديو', app:'idhaati', kw:normKw(['راديو','اذاعة','اذاعتي','radio']), q:''},
+    {ar:'مائدة', app:'maydati', kw:normKw(['مائدة','مايدتي','قائمة طعام','menu']), q:''}
   ];
+  function appFor(cat){ var i; for(i=0;i<APPS.length;i++){ if(APPS[i].u.indexOf(cat.app+'.kieda.online')>=0) return APPS[i]; } return null; }
 
   var asst=document.getElementById('asst'), micBtn=document.getElementById('micBtn'),
       asstCap=document.getElementById('asstCap'), asstHint=document.getElementById('asstHint'),
@@ -677,7 +696,7 @@
     if(!soundOn || !('speechSynthesis' in window)){ if(onend) setTimeout(onend,500); return; }
     try{ speechSynthesis.cancel();
       var u=new SpeechSynthesisUtterance(text), v=arVoice(); if(v) u.voice=v;
-      u.lang='ar-SA'; u.rate=0.82; u.pitch=0.55; u.volume=1;
+      u.lang='ar-SA'; u.rate=1.0; u.pitch=0.55; u.volume=1;
       if(genie) genie.classList.add('talking');
       u.onend=function(){ if(genie) genie.classList.remove('talking'); if(onend) onend(); };
       u.onerror=function(){ if(genie) genie.classList.remove('talking'); if(onend) onend(); };
@@ -689,19 +708,23 @@
     if(_pos){ res(_pos); return; }
     if(!navigator.geolocation){ rej('nogeo'); return; }
     navigator.geolocation.getCurrentPosition(function(p){ _pos={lat:p.coords.latitude,lng:p.coords.longitude}; res(_pos); },
-      function(){ rej('denied'); }, {enableHighAccuracy:true, timeout:11000, maximumAge:60000});
+      function(){ rej('denied'); }, {enableHighAccuracy:true, timeout:7000, maximumAge:120000});
   }); }
   function haversine(a,b,c,d){ var R=6371000,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t,
     h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2); return 2*R*Math.asin(Math.sqrt(h)); }
   function distTxt(m){ return m<1000? Math.round(m)+' متر' : (m/1000).toFixed(1)+' كم'; }
   async function overpass(filter,lat,lng,r){
-    var q='[out:json][timeout:25];('+filter+'(around:'+r+','+lat+','+lng+'););out body 40;';
-    var res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)});
+    var q='[out:json][timeout:10];('+filter+'(around:'+r+','+lat+','+lng+'););out body 30;';
+    var ctrl=(window.AbortController? new AbortController() : null), opts={method:'POST',body:'data='+encodeURIComponent(q)};
+    if(ctrl){ opts.signal=ctrl.signal; setTimeout(function(){ try{ctrl.abort();}catch(e){} },9000); }
+    var res=await fetch('https://overpass-api.de/api/interpreter',opts);
     var j=await res.json(); return j.elements||[];
   }
   async function findNearest(cat,pos){
-    var radii=[2500,7000,18000], els=[], i;
-    for(i=0;i<radii.length;i++){ try{ els=await overpass(cat.q,pos.lat,pos.lng,radii[i]); }catch(e){ els=[]; } if(els.length) break; }
+    // les 3 rayons sont interrogés EN PARALLÈLE pour une réponse ultra-rapide
+    var radii=[2500,7000,18000];
+    var results = await Promise.all(radii.map(function(r){ return overpass(cat.q,pos.lat,pos.lng,r).catch(function(){return [];}); }));
+    var els=[]; for(var i=0;i<results.length;i++){ if(results[i].length){ els=results[i]; break; } }
     var best=null,bd=1e12;
     els.forEach(function(e){ var la=e.lat||(e.center&&e.center.lat), ln=e.lon||(e.center&&e.center.lon); if(la==null) return;
       var d=haversine(pos.lat,pos.lng,la,ln); if(d<bd){ bd=d; best={name:(e.tags&&e.tags.name)||cat.ar,lat:la,lng:ln,dist:d}; } });
@@ -740,8 +763,8 @@
 
   function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
   function handleIntent(t){
-    var q=(t||'').toLowerCase(); setRoute(null);
-    function has(){ for(var i=0;i<arguments.length;i++){ if(q.indexOf(arguments[i])>=0) return true; } return false; }
+    var q=normTxt(t); setRoute(null);
+    function has(){ for(var i=0;i<arguments.length;i++){ if(q.indexOf(normTxt(arguments[i]))>=0) return true; } return false; }
     var hits=catsIn(q);
     if(hits.length>=2){ doMulti(hits); return; }
     if(hits.length===1){ doSingle(hits[0]); return; }
@@ -749,25 +772,35 @@
     if(has('تطبيق','application','افتح','حل')){ askOpen(); return; }
     var r, offer=false;
     if(has('سلام','اسلامة','اهلا','أهلا','صباح','مساء','salam','aslema','bonjour','salut')){ r='أهلاً وسهلاً بكَ أيُّها السيد! أنا فَرْحوم، خادمُكَ الأمين. فبِمَ تأذنُ لي أن أخدمَك؟'; offer=true; }
-    else if(has('شكون','من انت','qui','quoi','فرحوم')) r='أنا فَرْحوم، جِنِّيُّ المِصْباح الذهبي. أُيسِّرُ عليكَ أمورَك؛ اطلبْ صيدليةً، أو مَصرفاً، أو مَحطةً، فأهدِيَكَ إلى أقربِها.';
+    else if(has('شكون','من انت','qui','quoi','فرحوم')) r='أنا فَرْحوم، جِنِّيُّ المِصْباح الذهبي الأصلي. أُيسِّرُ عليكَ أمورَك؛ اطلبْ صيدليةً، أو مَصرفاً، أو مَحطةً، أو أيَّ تطبيقٍ من تطبيقاتي، فأهدِيَكَ إليه فوراً.';
     else if(has('شكرا','merci','يعيشك','يعيش')) r='لا شُكرَ على واجب يا سيدي، فأنا رهنُ إشارتِك في كلِّ حين.';
-    else { r='أخبِرني بحاجتِك: صيدليةٌ، مَصرفٌ، مَحطةُ وقود، مسجدٌ... فأدلَّكَ على أقربِها. وإنْ أردتَ عدةَ وجهاتٍ احتسبتُ لكَ أقصرَ مسار.'; offer=true; }
+    else { r='أخبِرني بحاجتِك: صيدليةٌ، مَصرفٌ، مَحطةُ وقود، مسجدٌ، مترجم، سيارات... فأدلَّكَ على أقربِها وأفتحَ لكَ تطبيقَها فوراً. وإنْ أردتَ عدةَ وجهاتٍ احتسبتُ لكَ أقصرَ مسار.'; offer=true; }
     speakText(r, function(){ if(offer) askOpen(); });
   }
 
   async function doSingle(cat){
-    setRoute(null); speakText('لحظةً يا سيدي، أبحثُ لكَ عن أقربِ '+cat.ar+' ...');
+    setRoute(null);
+    var app=appFor(cat);
+    if(!cat.q){ // app sans recherche géographique (مترجم/سيارات/راديو...) -> ouverture immédiate
+      speakText('حاضِرٌ يا سيدي، أفتحُ لكَ '+cat.ar+' فوراً 🌟');
+      if(app) openAppsPanel([app]);
+      return;
+    }
+    speakText('لحظةً يا سيدي، أبحثُ لكَ عن أقربِ '+cat.ar+' وأفتحُ لكَ تطبيقَها...');
+    if(app) openAppsPanel([app]);                 // ouverture instantanée de l'application correspondante
     try{ var pos=await getPos(), poi=await findNearest(cat,pos);
-      if(!poi){ speakText('لم أعثُرْ على '+cat.ar+' قريبٍ منكَ، حاوِلْ مرةً أخرى من فضلِك.'); return; }
+      if(!poi){ speakText('لم أعثُرْ على '+cat.ar+' قريبٍ منكَ، لكنْ ها هو تطبيقُها بَيْنَ يَدَيك.'); return; }
       speakText('أقربُ '+cat.ar+' هو '+poi.name+'، على بُعدِ '+distTxt(poi.dist)+' منكَ.');
       setRoute('https://www.google.com/maps/search/?api=1&query='+poi.lat+','+poi.lng, '📍 شاهِدْها على الخريطة');
-    }catch(e){ speakText('أحتاجُ إلى تحديدِ موقعِك كي أرشدَكَ. يُرجى تفعيلُ خاصيةِ تحديدِ الموقع والمحاولةُ ثانيةً.'); }
+    }catch(e){ speakText('أحتاجُ إلى تحديدِ موقعِك كي أُدقِّقَ المسافة، يُرجى تفعيلُ خاصيةِ تحديدِ الموقع.'); }
   }
   async function doMulti(cats){
-    setRoute(null); speakText('بسمِ الله، أحسبُ لكَ أقصرَ مسار...');
+    setRoute(null); speakText('بسمِ الله، أحسبُ لكَ أقصرَ مسار وأفتحُ لكَ التطبيقاتِ المعنيّة...');
+    var apps=cats.map(appFor).filter(function(a){return !!a;});
+    if(apps.length) openAppsPanel(apps);            // ouverture instantanée de toutes les applications détectées
     try{ var pos=await getPos(), items=[], i;
-      for(i=0;i<cats.length;i++){ var p=await findNearest(cats[i],pos); if(p) items.push({cat:cats[i],poi:p}); }
-      if(!items.length){ speakText('لم أجِدْ أيَّ مكانٍ قريبٍ منكَ، يُرجى المحاولةُ ثانيةً.'); return; }
+      for(i=0;i<cats.length;i++){ if(!cats[i].q) continue; var p=await findNearest(cats[i],pos); if(p) items.push({cat:cats[i],poi:p}); }
+      if(!items.length){ return; }
       var ordered=orderRoute(pos,items), names=ordered.map(function(o){return o.cat.ar;});
       speakText('أقصرُ مسارٍ يا سيدي: '+names.join('، ثم ')+'. افتحِ الخريطةَ وتوكَّلْ على الله.');
       setRoute(mapsDir(pos,ordered), '🗺️ أقصرُ مسار');
