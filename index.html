@@ -171,9 +171,14 @@
   #appsClose{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,215,0,.5);background:rgba(4,8,32,.6);color:#ffe566;font-size:20px;cursor:pointer}
   #appsGrid{flex:1; overflow:auto; display:grid; grid-template-columns:1fr; gap:14px; padding:14px; -webkit-overflow-scrolling:touch}
   @media(min-width:760px){#appsGrid{grid-template-columns:1fr 1fr}}
-  .appcard{background:#0a1340; border:1px solid rgba(255,215,0,.3); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,.5)}
-  .applab{font-family:'Reem Kufi',serif; font-weight:700; color:#241400; background:linear-gradient(180deg,#ffe566,#ffcc00); padding:8px 12px; font-size:14px}
+  .appcard{background:#0a1340; border:1px solid rgba(255,215,0,.3); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,.5); position:relative}
+  .applab{font-family:'Reem Kufi',serif; font-weight:700; color:#241400; background:linear-gradient(180deg,#ffe566,#ffcc00); padding:8px 12px; font-size:14px; display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .applab .extlink{font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700; color:#0d1a6e; background:rgba(255,255,255,.55); border-radius:8px; padding:3px 8px; text-decoration:none; white-space:nowrap}
+  .applab .extlink:active{background:rgba(255,255,255,.85)}
   .appcard iframe{width:100%; height:74vh; border:0; background:#02061c}
+  .appfallback{position:absolute; inset:0; top:34px; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:#02061c; color:#ffe566; text-align:center; padding:18px; font-size:14px}
+  .appfallback.show{display:flex}
+  .appfallback a{display:inline-block; background:linear-gradient(180deg,#ffe566,#ffcc00); color:#241400; font-weight:700; padding:9px 18px; border-radius:10px; text-decoration:none}
   @media(min-width:760px){.appcard iframe{height:60vh}}
 </style>
 </head>
@@ -818,11 +823,21 @@
     grid.innerHTML='';
     list.forEach(function(a){
       var card=document.createElement('div'); card.className='appcard';
-      var lab=document.createElement('div'); lab.className='applab'; lab.textContent=a.e+' '+a.n;
+      var lab=document.createElement('div'); lab.className='applab';
+      var nm=document.createElement('span'); nm.textContent=a.e+' '+a.n; lab.appendChild(nm);
+      var ext=document.createElement('a'); ext.className='extlink'; ext.href=a.u; ext.target='_blank'; ext.rel='noopener'; ext.textContent='⤴ فتح خارجي'; lab.appendChild(ext);
+      var fb=document.createElement('div'); fb.className='appfallback';
+      fb.innerHTML='هذا التطبيقُ لا يَقبلُ العرضَ هنا، افتَحْهُ مباشرةً:';
+      var fbLink=document.createElement('a'); fbLink.href=a.u; fbLink.target='_blank'; fbLink.rel='noopener'; fbLink.textContent='🌟 '+a.n; fb.appendChild(fbLink);
       var fr=document.createElement('iframe'); fr.src=a.u; fr.loading='lazy'; fr.title=a.n;
       fr.setAttribute('allow','geolocation; microphone; autoplay; clipboard-read; clipboard-write');
       fr.referrerPolicy='no-referrer';
-      card.appendChild(lab); card.appendChild(fr); grid.appendChild(card);
+      var loaded=false;
+      fr.addEventListener('load', function(){ loaded=true; });
+      fr.addEventListener('error', function(){ fb.classList.add('show'); });
+      // Si la page n'a montré aucun signe de chargement après 5s, on suppose un blocage d'intégration (X-Frame-Options/CSP)
+      setTimeout(function(){ if(!loaded) fb.classList.add('show'); }, 5000);
+      card.appendChild(lab); card.appendChild(fr); card.appendChild(fb); grid.appendChild(card);
     });
     p.classList.add('on'); document.body.classList.add('apps-open');
   }
