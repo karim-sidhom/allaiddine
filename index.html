@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#02061c">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مصباح فرحوم">
+<meta name="mobile-web-app-capable" content="yes">
 <title>مِصْباحُ عَلاءِ الدِّين — LORD SIDHOM I</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -870,6 +877,30 @@
   })();
 
   resize(); requestAnimationFrame(loop);
+
+  // ================= PWA : install worker + garder l'écran allumé =================
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    });
+  }
+
+  var wakeLock=null;
+  async function requestWakeLock(){
+    try{
+      if('wakeLock' in navigator){
+        wakeLock=await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', function(){ wakeLock=null; });
+      }
+    }catch(e){ /* refusé ou pas supporté : on ignore */ }
+  }
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState==='visible') requestWakeLock();
+  });
+  document.addEventListener('pointerdown', function once(){
+    requestWakeLock();
+    document.removeEventListener('pointerdown', once);
+  });
 })();
 </script>
 </body>

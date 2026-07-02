@@ -1,0 +1,18 @@
+{
+  "name": "مِصْباحُ عَلاءِ الدِّين — فرحوم",
+  "short_name": "مصباح فرحوم",
+  "description": "الجني فرحوم، خادمك يلقالك أقرب صيدلية، صرّاف، محطة و أكثر",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#02061c",
+  "theme_color": "#02061c",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

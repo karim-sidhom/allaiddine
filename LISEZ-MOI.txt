@@ -1,0 +1,16 @@
+ÉTAPE OBLIGATOIRE avant d'héberger le site :
+
+Le fichier "sw.js.txt" doit être renommé en "sw.js"
+(Gmail bloque les .js dans les zips, donc je l'ai renommé pour que
+l'email passe. Sur ton ordinateur/téléphone, il suffit d'enlever
+le ".txt" à la fin du nom du fichier.)
+
+Ensuite, mets tous ces fichiers ensemble (même dossier) sur ton
+hébergement HTTPS :
+- index.html
+- manifest.webmanifest
+- sw.js   (renommé)
+- icon-192.png
+- icon-512.png
+- icon-512-maskable.png
+- apple-touch-icon.png
