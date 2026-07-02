@@ -795,8 +795,15 @@
   }
 
   function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
+  function farhoumDance(){
+    stopListen();
+    var danceSong=new Audio('https://kieda.online/chanson.mp3');
+    danceSong.onended=function(){ resumeListen(); };
+    danceSong.play().catch(function(){ resumeListen(); });
+  }
   function handleIntent(t){
     var q=(t||'').toLowerCase();
+    if(/(رقص|ارقص|دانس|ichtahg|dance|danse)/i.test(q)){ farhoumDance(); return; }
     if(/(سكّر|سكر|أغلق|اغلق|غلق|خرّج|اخرج|أخرج|برّا|ferme|fermer|close|quitter)/i.test(q)){ if(document.body.classList.contains('apps-open')){ closeApps(); speakText('سكّرتهم يا سيدي، بلا مزيّة.', resumeListen); } else { speakText('ما فمّاش تطبيق محلول يا سيدي.', resumeListen); } return; }
     if(document.body.classList.contains('apps-open')) closeApps();
     setRoute(null);
