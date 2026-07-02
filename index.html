@@ -89,6 +89,14 @@
     filter:blur(0) drop-shadow(0 0 46px rgba(120,200,255,.85)) drop-shadow(0 0 100px rgba(80,140,240,.65))}
   #genieInner{width:100%;height:100%; animation:float 4.6s ease-in-out infinite; transform-style:preserve-3d; will-change:transform}
   #genie.spin #genieInner{animation:heroSpin 2.2s cubic-bezier(.45,.05,.2,1) 1}
+  #genie.dancing #genieInner{animation:farhoumDanceMove .55s ease-in-out infinite}
+  @keyframes farhoumDanceMove{
+    0%{transform:translateY(0) rotate(-9deg) scale(1)}
+    25%{transform:translateY(-20px) rotate(9deg) scale(1.06)}
+    50%{transform:translateY(-2px) rotate(-7deg) scale(.96)}
+    75%{transform:translateY(-22px) rotate(11deg) scale(1.06)}
+    100%{transform:translateY(0) rotate(-9deg) scale(1)}
+  }
   @keyframes heroSpin{
     0%{transform:rotateY(0deg) rotateX(0deg) translateY(0) scale(1)}
     28%{transform:rotateY(130deg) rotateX(4deg) translateY(-14px) scale(1.03)}
@@ -795,15 +803,28 @@
   }
 
   function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
+  var dancing=false, danceAudio=null;
   function farhoumDance(){
-    stopListen();
-    var danceSong=new Audio('https://kieda.online/chanson.mp3');
-    danceSong.onended=function(){ resumeListen(); };
-    danceSong.play().catch(function(){ resumeListen(); });
+    if(dancing) return;
+    dancing=true;
+    if(genie) genie.classList.add('dancing');
+    danceAudio=new Audio('https://kieda.online/chanson.mp3');
+    danceAudio.loop=true;
+    danceAudio.onended=function(){ stopDance(); };
+    danceAudio.play().catch(function(){});
+    resumeListen();
+  }
+  function stopDance(){
+    if(!dancing) return;
+    dancing=false;
+    if(genie) genie.classList.remove('dancing');
+    if(danceAudio){ try{ danceAudio.pause(); danceAudio.currentTime=0; }catch(e){} danceAudio=null; }
+    resumeListen();
   }
   function handleIntent(t){
     var q=(t||'').toLowerCase();
-    if(/(رقص|ارقص|دانس|ichtahg|dance|danse)/i.test(q)){ farhoumDance(); return; }
+    if(dancing && /(coupé|coupe|قطع|وقف|stop|كفا|خلاص|khalas)/i.test(q)){ stopDance(); return; }
+    if(/(رقص|دانس|ichtahg|ishtahag|chta7|chatah|شطح|dance|danse|dansé)/i.test(q)){ farhoumDance(); return; }
     if(/(سكّر|سكر|أغلق|اغلق|غلق|خرّج|اخرج|أخرج|برّا|ferme|fermer|close|quitter)/i.test(q)){ if(document.body.classList.contains('apps-open')){ closeApps(); speakText('سكّرتهم يا سيدي، بلا مزيّة.', resumeListen); } else { speakText('ما فمّاش تطبيق محلول يا سيدي.', resumeListen); } return; }
     if(document.body.classList.contains('apps-open')) closeApps();
     setRoute(null);
