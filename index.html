@@ -89,6 +89,14 @@
     filter:blur(0) drop-shadow(0 0 46px rgba(120,200,255,.85)) drop-shadow(0 0 100px rgba(80,140,240,.65))}
   #genieInner{width:100%;height:100%; animation:float 4.6s ease-in-out infinite; transform-style:preserve-3d; will-change:transform}
   #genie.spin #genieInner{animation:heroSpin 2.2s cubic-bezier(.45,.05,.2,1) 1}
+  #genie.dancing #genieInner{animation:farhoumDanceMove .55s ease-in-out infinite}
+  @keyframes farhoumDanceMove{
+    0%{transform:translateY(0) rotate(-9deg) scale(1)}
+    25%{transform:translateY(-20px) rotate(9deg) scale(1.06)}
+    50%{transform:translateY(-2px) rotate(-7deg) scale(.96)}
+    75%{transform:translateY(-22px) rotate(11deg) scale(1.06)}
+    100%{transform:translateY(0) rotate(-9deg) scale(1)}
+  }
   @keyframes heroSpin{
     0%{transform:rotateY(0deg) rotateX(0deg) translateY(0) scale(1)}
     28%{transform:rotateY(130deg) rotateX(4deg) translateY(-14px) scale(1.03)}
@@ -795,8 +803,71 @@
   }
 
   function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
+  var dancing=false, danceAudio=null;
+  function farhoumDance(){
+    if(dancing) return;
+    dancing=true;
+    if(genie) genie.classList.add('dancing');
+    danceAudio=new Audio('https://kieda.online/chanson.mp3');
+    danceAudio.loop=true;
+    danceAudio.onended=function(){ stopDance(); };
+    danceAudio.play().catch(function(){});
+    resumeListen();
+  }
+  function stopDance(){
+    if(!dancing) return;
+    dancing=false;
+    if(genie) genie.classList.remove('dancing');
+    if(danceAudio){ try{ danceAudio.pause(); danceAudio.currentTime=0; }catch(e){} danceAudio=null; }
+    resumeListen();
+  }
+  function askEncyclopedia(query){
+    speakText('ثواني نلوّج لك في الموسوعة يا سيدي...');
+    var lang=/[\u0600-\u06FF]/.test(query)?'ar':'fr';
+    var searchUrl='https://'+lang+'.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(query)+'&format=json&origin=*';
+    fetch(searchUrl).then(function(r){return r.json();}).then(function(sjson){
+      var hits=sjson&&sjson.query&&sjson.query.search;
+      if(!hits||!hits.length){ speakText('عذراً، ما لقيتش معلومة على هذا الموضوع في الموسوعة.', resumeListen); return; }
+      var title=hits[0].title;
+      var extractUrl='https://'+lang+'.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles='+encodeURIComponent(title)+'&format=json&origin=*';
+      return fetch(extractUrl).then(function(r){return r.json();}).then(function(ejson){
+        var pages=ejson.query.pages, pid=Object.keys(pages)[0], extract=(pages[pid]&&pages[pid].extract)||'';
+        if(!extract){ speakText('ما لقيتش تفاصيل كافية على '+title+'.', resumeListen); return; }
+        var short=extract.length>700? extract.slice(0,700)+'…' : extract;
+        speakText(short, resumeListen);
+      });
+    }).catch(function(){ speakText('صار خطأ باش نجيب المعلومة من الموسوعة، جرب مرة أخرى.', resumeListen); });
+  }
+  function extractNumber(str){ var m=(str||'').match(/\d+/); return m?parseInt(m[0],10):null; }
+  function reciteHizb(n){
+    if(!n||n<1||n>60) n=1;
+    speakText('ثواني نجيبلك الحزب رقم '+n+' من القرآن الكريم...');
+    var q1=4*(n-1)+1, q4=4*n, reqs=[], i;
+    for(i=q1;i<=q4;i++){ reqs.push(fetch('https://api.alquran.cloud/v1/hizbQuarter/'+i+'/quran-uthmani').then(function(r){return r.json();}).catch(function(){return null;})); }
+    Promise.all(reqs).then(function(results){
+      var text='';
+      results.forEach(function(res){ if(res&&res.data&&res.data.ayahs){ res.data.ayahs.forEach(function(a){ text+=a.text+' '; }); } });
+      if(!text){ speakText('ما لقيتش نص هذا الحزب، جرب رقم من 1 إلى 60.', resumeListen); return; }
+      speakText(text, resumeListen, true);
+    }).catch(function(){ speakText('صار خطأ باش نجيب القرآن، تأكد من الاتصال بالنت.', resumeListen); });
+  }
+  function reciteHadith(n){
+    speakText('ثواني نجيبلك حديثاً شريفاً...');
+    var num=n||(Math.floor(Math.random()*7000)+1);
+    fetch('https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari/'+num+'.json')
+      .then(function(r){return r.json();})
+      .then(function(j){
+        var h=j&&j.hadiths&&j.hadiths[0];
+        if(!h||!h.text){ speakText('ما لقيتش هذا الحديث، جرب مرة أخرى.', resumeListen); return; }
+        speakText(h.text, resumeListen, true);
+      }).catch(function(){ speakText('صار خطأ باش نجيب الحديث، تأكد من الاتصال بالنت.', resumeListen); });
+  }
   function handleIntent(t){
     var q=(t||'').toLowerCase();
+    if(dancing && /(coupé|coupe|قطع|وقف|stop|كفا|خلاص|khalas)/i.test(q)){ stopDance(); return; }
+    if(/(رقص|دانس|ichtahg|ishtahag|chta7|chatah|شطح|dance|danse|dansé)/i.test(q)){ farhoumDance(); return; }
+    if(/(حزب|قرآن|القرآن|coran|quran)/i.test(q)){ reciteHizb(extractNumber(q)); return; }
+    if(/(حديث|احاديث|الأحاديث|hadith)/i.test(q)){ reciteHadith(extractNumber(q)); return; }
     if(/(سكّر|سكر|أغلق|اغلق|غلق|خرّج|اخرج|أخرج|برّا|ferme|fermer|close|quitter)/i.test(q)){ if(document.body.classList.contains('apps-open')){ closeApps(); speakText('سكّرتهم يا سيدي، بلا مزيّة.', resumeListen); } else { speakText('ما فمّاش تطبيق محلول يا سيدي.', resumeListen); } return; }
     if(document.body.classList.contains('apps-open')) closeApps();
     setRoute(null);
@@ -808,9 +879,9 @@
     if(has('تطبيق','application','افتح','حل')){ askOpen(); return; }
     var r, offer=false;
     if(has('سلام','اسلامة','اهلا','أهلا','صباح','مساء','salam','aslema','bonjour','salut')){ r='أهلا و سهلا بيك! أنا فرحوم، خادمك. قولّي شنوّة تلوّج عليه؟'; offer=true; }
-    else if(has('شكون','من انت','qui','quoi','فرحوم')) r='أنا فرحوم، جنّي المصباح، نسهّلّك حياتك. اطلب صيدلية، صرّاف، محطة... و نلقيهملك!';
+    else if(/(شكون انت|شكون نتا|من انت|من أنت|qui es-tu)/i.test(q) || (has('فرحوم')&&has('شكون','من هو'))) r='أنا فرحوم، جنّي المصباح، نسهّلّك حياتك. اطلب صيدلية، صرّاف، محطة... و نلقيهملك!';
     else if(has('شكرا','merci','يعيشك','يعيش')) r='بلا مزيّة يا سيدي، أنا في خدمتك ديما.';
-    else { r='قولّي شنوّة تحتاج: صيدلية، صرّاف، محطة، جامع... و نلقيلك الأقرب. و لو تحب برشة حاجات نحسبلك الطريق الأقصر.'; offer=true; }
+    else { askEncyclopedia(t); return; }
     speakText(r, function(){ if(offer) askOpen(); else resumeListen(); });
   }
 
