@@ -862,12 +862,32 @@
         speakText(h.text, resumeListen, true);
       }).catch(function(){ speakText('صار خطأ باش نجيب الحديث، تأكد من الاتصال بالنت.', resumeListen); });
   }
+  var CAR_KB=[
+    {kw:['ما تبديش','لا تدور','ne démarre pas','ما يخدمش المحرك','clic clic','دقة دقة'], a:'يبان علاه بطارية فارغة ولا مربوطة غالط، ولا الديمّار (démarreur) خربان. جرب تشحن البطارية ولا تعمل دفع، و إذا رجعت العلامة نفسها فحص عند الميكانيسيان.'},
+    {kw:['يسخن','surchauffe','chauffe trop','حرارة المحرك','témoin rouge','ضو أحمر'], a:'احتمال نقص في الماء ولا الرادياتور مسدود ولا الترموستا خربانة. وقف السيارة فورا، ما تفتحش الرادياتور و هو سخون، و اتصل بميكانيسيان.'},
+    {kw:['دخان أبيض','fumée blanche'], a:'يمكن جوان الكولاس (joint de culasse) خربان و الماء يدخل للمحرك. فحص فوري لازم قبل ما تسوق أكثر.'},
+    {kw:['دخان أسود','fumée noire'], a:'خليط بنزين/هوا مش مضبوط، فلتر هوا مسدود ولا حاقن (injecteur) خربان. نظف ولا بدّل الفلتر و افحص عند الميكانيسيان.'},
+    {kw:['صوت معدني','bruit métallique','طقطقة المحرك'], a:'يمكن نقص الزيت ولا كسينات (coussinets) مستهلكة. فحص مستوى الزيت أولا و توقف عن السياقة إذا الصوت قوي.'},
+    {kw:['فرامل تصرخ','freins qui grincent','grincement frein'], a:'بلاكيتات الفرامل (plaquettes) مستهلكة. لازم تبدّلها بسرعة، الفرامل ما تتأخرش فيها.'},
+    {kw:['دركسيون صعيب','direction dure','volant dur'], a:'نقص في زيت الدركسيون المساعد ولا الكوريو (courroie) مقطوعة. فحص المستوى و الكوريو.'},
+    {kw:['عجلة تنقص هوا','pneu qui perd','crevaison lente'], a:'يمكن فمّة ثقب صغير ولا الفالف (valve) خربانة. فحص الضغط بانتظام و روح لصيانة عجلات.'},
+    {kw:['كليماتيزور ما يبردش',"climatisation ne refroidit pas",'clim faible'], a:'ينقص غاز الكليماتيزور ولا الكومبريسور خربان. لازم تعمل شحن غاز عند مختص.'},
+    {kw:['فيتاس تعلق','boîte de vitesse','vibration embrayage'], a:'يمكن الأمبرياج (embrayage) مستهلك ولا مشكل في البواط دي فيتاس. فحص عند ميكانيسيان مختص في البواط.'}
+  ];
+  function carDiagnostic(q){
+    for(var i=0;i<CAR_KB.length;i++){
+      var e=CAR_KB[i];
+      for(var j=0;j<e.kw.length;j++){ if(q.indexOf(e.kw[j])>=0){ speakText(e.a, resumeListen); return true; } }
+    }
+    return false;
+  }
   function handleIntent(t){
     var q=(t||'').toLowerCase();
     if(dancing && /(coupé|coupe|قطع|وقف|stop|كفا|خلاص|khalas)/i.test(q)){ stopDance(); return; }
     if(/(رقص|دانس|ichtahg|ishtahag|chta7|chatah|شطح|dance|danse|dansé)/i.test(q)){ farhoumDance(); return; }
     if(/(حزب|قرآن|القرآن|coran|quran)/i.test(q)){ reciteHizb(extractNumber(q)); return; }
     if(/(حديث|احاديث|الأحاديث|hadith)/i.test(q)){ reciteHadith(extractNumber(q)); return; }
+    if(/(سيارة|سيارتي|voiture|moteur|محرك|panne|عطل|فرامل|frein|بطارية السيارة|batterie voiture)/i.test(q)){ if(carDiagnostic(q)) return; }
     if(/(سكّر|سكر|أغلق|اغلق|غلق|خرّج|اخرج|أخرج|برّا|ferme|fermer|close|quitter)/i.test(q)){ if(document.body.classList.contains('apps-open')){ closeApps(); speakText('سكّرتهم يا سيدي، بلا مزيّة.', resumeListen); } else { speakText('ما فمّاش تطبيق محلول يا سيدي.', resumeListen); } return; }
     if(document.body.classList.contains('apps-open')) closeApps();
     setRoute(null);
