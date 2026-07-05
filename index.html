@@ -210,9 +210,9 @@
   .applab{font-family:'Reem Kufi',serif; font-weight:700; color:#241400; background:linear-gradient(180deg,#ffe566,#ffcc00); padding:8px 12px; font-size:14px}
   .appcard iframe{width:100%; height:74vh; border:0; background:#02061c}
   @media(min-width:760px){.appcard iframe{height:60vh}}
-  #ytPanel{position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none}
-  #ytFrameWrap{width:1px; height:1px}
-  #ytFrame{width:1px; height:1px; border:0}
+  #ytPanel{position:fixed; right:0; bottom:0; width:2px; height:2px; overflow:hidden; opacity:0; pointer-events:none; z-index:1}
+  #ytFrameWrap{width:2px; height:2px}
+  #ytFrame{width:2px; height:2px; border:0}
 </style>
 </head>
 <body>
@@ -489,7 +489,7 @@
 
   <!-- ===== YouTube audio-only (hidden) ===== -->
   <div id="ytPanel" aria-hidden="true">
-    <div id="ytFrameWrap"><iframe id="ytFrame" allow="autoplay; encrypted-media" loading="lazy"></iframe></div>
+    <div id="ytFrameWrap"><iframe id="ytFrame" allow="autoplay; encrypted-media"></iframe></div>
   </div>
 
   <button id="soundBtn" aria-label="Couper le son">🔊</button>
