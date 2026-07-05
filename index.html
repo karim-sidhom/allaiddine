@@ -728,18 +728,30 @@
       routeBtn=document.getElementById('routeBtn');
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition, recog=null, listening=false, asstShown=false;
   var _pos=null, pendingRoute=null, pendingApps=null, listenSession=0, curMode='free', micDenied=false;
+  var sttLang=(function(){ try{ return localStorage.getItem('farhoumLang')||'ar-SA'; }catch(e){ return 'ar-SA'; } })();
+  function setSttLang(code){ if(sttLang===code) return; sttLang=code; try{ localStorage.setItem('farhoumLang',code); }catch(e){} }
+  // يفهم فرحوم اللغة تلقائياً من كلام السيد، بلا زر وبلا ما يحكي على الموضوع
+  function guessLangFrom(t){
+    if(!t) return null;
+    if(/[\u0600-\u06FF]/.test(t)) return 'ar-SA';
+    var frHit=/[àâçéèêëîïôùûüÿœ]|(?:^|\s)(le|la|les|un|une|des|de|du|est|et|je|tu|il|elle|nous|vous|ils|elles|chanson|écoute|écouter|musique|veux|voudrais|s'il|bonjour|merci)(?:\s|$)/i.test(t);
+    var enHit=/(?:^|\s)(the|a|an|is|are|you|please|song|music|play|listen|hello|thanks|want|would)(?:\s|$)/i.test(t);
+    if(frHit && !enHit) return 'fr-FR';
+    if(enHit && !frHit) return 'en-US';
+    return null;
+  }
 
   function setCap(t){ if(!asstCap) return; asstCap.textContent=t||''; asstCap.classList.toggle('show',!!t); }
   function setHint(t){ if(asstHint) asstHint.textContent=t; }
   function showConfirm(on){ if(confirmBar) confirmBar.classList.toggle('on',!!on); }
   function setRoute(url,label){ if(!routeBtn) return; if(url){ pendingRoute=url; routeBtn.textContent=label||'\uD83D\uDDFA\uFE0F افتح المسار'; routeBtn.style.display='inline-block'; } else { pendingRoute=null; routeBtn.style.display='none'; } }
 
-  function speakText(text, onend, noCap){
+  function speakText(text, onend, noCap, langOverride){
     if(!noCap) setCap(text);
     if(!soundOn || !('speechSynthesis' in window)){ if(onend) setTimeout(onend,500); return; }
     try{ speechSynthesis.cancel();
-      var u=new SpeechSynthesisUtterance(text), v=arVoice(); if(v) u.voice=v;
-      u.lang='ar-SA'; u.rate=0.92; u.pitch=0.6; u.volume=1;
+      var u=new SpeechSynthesisUtterance(text), lg=langOverride||'ar-SA', v=(lg==='ar-SA')?arVoice():null; if(v) u.voice=v;
+      u.lang=lg; u.rate=0.92; u.pitch=0.6; u.volume=1;
       if(genie) genie.classList.add('talking');
       u.onend=function(){ if(genie) genie.classList.remove('talking'); if(onend) onend(); };
       u.onerror=function(){ if(genie) genie.classList.remove('talking'); if(onend) onend(); };
@@ -782,7 +794,7 @@
     try{ if(recog) recog.abort(); }catch(e){}
     var mySession=++listenSession; curMode=mode;
     try{ recog=new SR(); }catch(e){ return; }
-    recog.lang='ar-SA'; recog.interimResults=false; recog.maxAlternatives=3; recog.continuous=false;
+    recog.lang=sttLang; recog.interimResults=false; recog.maxAlternatives=3; recog.continuous=false;
     listening=true; if(asst) asst.classList.add('listening'); document.body.classList.add('aslisten'); setHint('\u2026 نسمعك يا سيدي');
     recog.onresult=function(ev){ if(mySession!==listenSession) return; var t=''; for(var i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript+' '; handleSpeech(t.trim(),mode); };
     recog.onerror=function(ev){
@@ -807,6 +819,8 @@
       else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
       return;
     }
+    var glang=guessLangFrom(t); if(glang) setSttLang(glang);
+    setCap('🎤 '+t);
     handleIntent(t);
   }
 
