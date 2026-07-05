@@ -210,9 +210,9 @@
   .applab{font-family:'Reem Kufi',serif; font-weight:700; color:#241400; background:linear-gradient(180deg,#ffe566,#ffcc00); padding:8px 12px; font-size:14px}
   .appcard iframe{width:100%; height:74vh; border:0; background:#02061c}
   @media(min-width:760px){.appcard iframe{height:60vh}}
-  #ytPanel{position:fixed; right:0; bottom:0; width:2px; height:2px; overflow:hidden; opacity:0; pointer-events:none; z-index:1}
-  #ytFrameWrap{width:2px; height:2px}
-  #ytFrame{width:2px; height:2px; border:0}
+  #ytPanel{position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none}
+  #ytFrameWrap{width:1px; height:1px}
+  #ytFrame{width:1px; height:1px; border:0}
 </style>
 </head>
 <body>
@@ -489,7 +489,7 @@
 
   <!-- ===== YouTube audio-only (hidden) ===== -->
   <div id="ytPanel" aria-hidden="true">
-    <div id="ytFrameWrap"><iframe id="ytFrame" allow="autoplay; encrypted-media"></iframe></div>
+    <div id="ytFrameWrap"><iframe id="ytFrame" allow="autoplay; encrypted-media" loading="lazy"></iframe></div>
   </div>
 
   <button id="soundBtn" aria-label="Couper le son">🔊</button>
@@ -630,12 +630,7 @@
     setTimeout(function(){ genie.classList.add('show'); }, 900);  // then condenses into the genie
     setTimeout(function(){
       heroSequence(function(){
-        speakText('شُبيك لُبيك، الدُّنيا بين يديك', function(){
-          showAssistant();
-          if(langConfirmed()){
-            setTimeout(function(){ speakText('مرحبا بكم في عالمي الجميل، أنا فرحوم، بتسهيل حياتكم', resumeListen, true); }, 250);
-          }
-        }, true);
+        speakText('شُبيك لُبيك، الدُّنيا بين يديك', function(){ showAssistant(); setTimeout(function(){ speakText('مرحبا بكم في عالمي الجميل، أنا فرحوم، بتسهيل حياتكم', resumeListen, true); }, 250); }, true);
       });
     }, 1280);
     clearInterval(idleTimer);
@@ -735,17 +730,6 @@
   var _pos=null, pendingRoute=null, pendingApps=null, listenSession=0, curMode='free', micDenied=false;
   var sttLang=(function(){ try{ return localStorage.getItem('farhoumLang')||'ar-SA'; }catch(e){ return 'ar-SA'; } })();
   function setSttLang(code){ if(sttLang===code) return; sttLang=code; try{ localStorage.setItem('farhoumLang',code); }catch(e){} }
-  var langAskAttempts=0;
-  function langConfirmed(){ try{ return localStorage.getItem('farhoumLangConfirmed')==='1'; }catch(e){ return false; } }
-  function askLanguage(){
-    langAskAttempts=0;
-    speakText('أهلا وسهلا! بأي لغة تحب تحكي معايا: عربي، فرنسي، ولّا انجليزي؟', function(){ startListen('lang'); });
-  }
-  function confirmLang(code){
-    setSttLang(code); try{ localStorage.setItem('farhoumLangConfirmed','1'); }catch(e){}
-    var msgs={'ar-SA':'باهي! توّة نحكيو بالعربي.','fr-FR':"Parfait, on va parler en français.",'en-US':'Great, we will speak in English now.'};
-    speakText(msgs[code]||msgs['ar-SA'], resumeListen, false, code);
-  }
   // يفهم فرحوم اللغة تلقائياً من كلام السيد، بلا زر وبلا ما يحكي على الموضوع
   function guessLangFrom(t){
     if(!t) return null;
@@ -829,30 +813,15 @@
   function resumeListen(){ if(!asstShown || micDenied) return; startListen('free'); }
 
   function handleSpeech(t,mode){
-    try{
-      if(mode==='confirm'){
-        var yes=/(نعم|اي|إيه|ايه|oui|yes|ok|باهي|افتح|حل)/i.test(t), no=/(لا|non|no|موش|بلا|خليها)/i.test(t);
-        if(yes && !no) doOpen(); else if(no) declineOpen();
-        else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
-        return;
-      }
-      if(mode==='lang'){
-        var raw=(t||'');
-        if(/(عرب|arab)/i.test(raw)){ confirmLang('ar-SA'); return; }
-        if(/(فرنس|franc|français|francais)/i.test(raw)){ confirmLang('fr-FR'); return; }
-        if(/(انجليز|englis|english|anglais)/i.test(raw)){ confirmLang('en-US'); return; }
-        langAskAttempts++;
-        if(langAskAttempts>=3){ confirmLang('ar-SA'); return; }
-        speakText('ما فهمتش، قولّي: عربي، فرنسي، ولّا انجليزي؟', function(){ startListen('lang'); });
-        return;
-      }
-      var glang=guessLangFrom(t); if(glang) setSttLang(glang);
-      setCap('🎤 '+t);
-      handleIntent(t);
-    }catch(err){
-      try{ console.error('farhoum error:', err); }catch(e2){}
-      resumeListen();
+    if(mode==='confirm'){
+      var yes=/(نعم|اي|إيه|ايه|oui|yes|ok|باهي|افتح|حل)/i.test(t), no=/(لا|non|no|موش|بلا|خليها)/i.test(t);
+      if(yes && !no) doOpen(); else if(no) declineOpen();
+      else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
+      return;
     }
+    var glang=guessLangFrom(t); if(glang) setSttLang(glang);
+    setCap('🎤 '+t);
+    handleIntent(t);
   }
 
   function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
@@ -917,7 +886,6 @@
   }
   function handleIntent(t){
     var q=(t||'').toLowerCase();
-    if(/(غيّر اللغة|غير اللغة|بدّل اللغة|بدل اللغة|change language|changer de langue|change de langue)/i.test(q)){ askLanguage(); return; }
     if(dancing && /(coupé|coupe|قطع|وقف|stop|كفا|خلاص|khalas)/i.test(q)){ stopDance(); return; }
     if(/(رقص|دانس|ichtahg|ishtahag|chta7|chatah|شطح|dance|danse|dansé)/i.test(q)){ farhoumDance(); return; }
     if(/(حزب|قرآن|القرآن|coran|quran)/i.test(q)){ reciteHizb(extractNumber(q)); return; }
@@ -929,7 +897,13 @@
       return;
     }
     if(/(يوتيوب|يوتوب|utub|youtube|أغني|اغني|أغنية|اغنية|غنية|غنوة|كليب|clip|chanson|chansons|musique|music|song|écout|ecout|نسمع|نستمع|نسمعو|نستمعو|سمعني|اسمعني|فرّجني|فرجني)/i.test(q)){
-      playYoutube(t); return;
+      var yq=t, leadIn=/(?:chanson\s+d[e']\s*|chansons?\s+de\s*|musique\s+d[e']\s*|أغنية\s*(?:ديال|دي|ل|لـ)?\s*|اغنية\s*(?:ديال|دي|ل|لـ)?\s*|غنية\s*(?:ديال|دي|ل|لـ)?\s*|غنوة\s*(?:ديال|دي|ل|لـ)?\s*)([\s\S]+)$/i;
+      var mm=t.match(leadIn);
+      if(mm && mm[1] && mm[1].trim()) yq=mm[1].trim();
+      else{
+        yq=q.replace(/(شغّلي|شغلي|شغّل|شغل|لعب|العب|نحب نسمع|نحب نستمع|حاب نسمع|حابة نسمع|نسمع|نستمع|نسمعو|نستمعو|سمعني|اسمعني|فرّجني|فرجني|نشوف|نتفرج|فيديو|video|clip|كليب|play|watch|jouer|joue|joue[- ]moi|mets[- ]moi|mets|met|lance|écouter|ecouter|écoute|ecoute|je veux écouter|je veux ecouter|je veux entendre|je veux voir|regarder|من فضلك|عافاك|s'il te plait|stp|في اليوتيوب|في يوتيوب|على يوتيوب|يوتيوب|يوتوب|utub|youtube)/gi,' ').replace(/\s+/g,' ').trim();
+      }
+      playYoutube(yq||t); return;
     }
     if(document.body.classList.contains('apps-open')) closeApps();
     setRoute(null);
@@ -1012,20 +986,8 @@
 
   function showAssistant(){ if(asstShown) return; asstShown=true; if(asst) asst.classList.add('on');
     if(!SR) setHint('متصفحك ما يدعمش التعرف على الصوت');
-    else if(!langConfirmed()) askLanguage();
   }
   function hideAssistant(){ asstShown=false; if(asst) asst.classList.remove('on'); showConfirm(false); stopListen(); setCap(''); setRoute(null); pendingApps=null; closeApps(); }
-
-  // فيلي أمان: كان الميكروفون تقفل بالغلط، فرحوم يرجع يسمع بروحه
-  setInterval(function(){
-    try{
-      if(asstShown && !micDenied && !listening && curMode==='free'
-         && !document.body.classList.contains('apps-open') && !document.body.classList.contains('aslisten')
-         && !(genie && genie.classList.contains('talking'))){
-        startListen('free');
-      }
-    }catch(e){}
-  }, 4000);
 
   (function(){
     if(appChips){
