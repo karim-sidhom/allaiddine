@@ -630,7 +630,12 @@
     setTimeout(function(){ genie.classList.add('show'); }, 900);  // then condenses into the genie
     setTimeout(function(){
       heroSequence(function(){
-        speakText('شُبيك لُبيك، الدُّنيا بين يديك', function(){ showAssistant(); setTimeout(function(){ speakText('مرحبا بكم في عالمي الجميل، أنا فرحوم، بتسهيل حياتكم', resumeListen, true); }, 250); }, true);
+        speakText('شُبيك لُبيك، الدُّنيا بين يديك', function(){
+          showAssistant();
+          if(langConfirmed()){
+            setTimeout(function(){ speakText('مرحبا بكم في عالمي الجميل، أنا فرحوم، بتسهيل حياتكم', resumeListen, true); }, 250);
+          }
+        }, true);
       });
     }, 1280);
     clearInterval(idleTimer);
@@ -730,6 +735,17 @@
   var _pos=null, pendingRoute=null, pendingApps=null, listenSession=0, curMode='free', micDenied=false;
   var sttLang=(function(){ try{ return localStorage.getItem('farhoumLang')||'ar-SA'; }catch(e){ return 'ar-SA'; } })();
   function setSttLang(code){ if(sttLang===code) return; sttLang=code; try{ localStorage.setItem('farhoumLang',code); }catch(e){} }
+  var langAskAttempts=0;
+  function langConfirmed(){ try{ return localStorage.getItem('farhoumLangConfirmed')==='1'; }catch(e){ return false; } }
+  function askLanguage(){
+    langAskAttempts=0;
+    speakText('أهلا وسهلا! بأي لغة تحب تحكي معايا: عربي، فرنسي، ولّا انجليزي؟', function(){ startListen('lang'); });
+  }
+  function confirmLang(code){
+    setSttLang(code); try{ localStorage.setItem('farhoumLangConfirmed','1'); }catch(e){}
+    var msgs={'ar-SA':'باهي! توّة نحكيو بالعربي.','fr-FR':"Parfait, on va parler en français.",'en-US':'Great, we will speak in English now.'};
+    speakText(msgs[code]||msgs['ar-SA'], resumeListen, false, code);
+  }
   // يفهم فرحوم اللغة تلقائياً من كلام السيد، بلا زر وبلا ما يحكي على الموضوع
   function guessLangFrom(t){
     if(!t) return null;
@@ -820,6 +836,16 @@
         else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
         return;
       }
+      if(mode==='lang'){
+        var raw=(t||'');
+        if(/(عرب|arab)/i.test(raw)){ confirmLang('ar-SA'); return; }
+        if(/(فرنس|franc|français|francais)/i.test(raw)){ confirmLang('fr-FR'); return; }
+        if(/(انجليز|englis|english|anglais)/i.test(raw)){ confirmLang('en-US'); return; }
+        langAskAttempts++;
+        if(langAskAttempts>=3){ confirmLang('ar-SA'); return; }
+        speakText('ما فهمتش، قولّي: عربي، فرنسي، ولّا انجليزي؟', function(){ startListen('lang'); });
+        return;
+      }
       var glang=guessLangFrom(t); if(glang) setSttLang(glang);
       setCap('🎤 '+t);
       handleIntent(t);
@@ -891,6 +917,7 @@
   }
   function handleIntent(t){
     var q=(t||'').toLowerCase();
+    if(/(غيّر اللغة|غير اللغة|بدّل اللغة|بدل اللغة|change language|changer de langue|change de langue)/i.test(q)){ askLanguage(); return; }
     if(dancing && /(coupé|coupe|قطع|وقف|stop|كفا|خلاص|khalas)/i.test(q)){ stopDance(); return; }
     if(/(رقص|دانس|ichtahg|ishtahag|chta7|chatah|شطح|dance|danse|dansé)/i.test(q)){ farhoumDance(); return; }
     if(/(حزب|قرآن|القرآن|coran|quran)/i.test(q)){ reciteHizb(extractNumber(q)); return; }
@@ -985,6 +1012,7 @@
 
   function showAssistant(){ if(asstShown) return; asstShown=true; if(asst) asst.classList.add('on');
     if(!SR) setHint('متصفحك ما يدعمش التعرف على الصوت');
+    else if(!langConfirmed()) askLanguage();
   }
   function hideAssistant(){ asstShown=false; if(asst) asst.classList.remove('on'); showConfirm(false); stopListen(); setCap(''); setRoute(null); pendingApps=null; closeApps(); }
 
