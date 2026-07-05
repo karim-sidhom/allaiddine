@@ -210,9 +210,12 @@
   .applab{font-family:'Reem Kufi',serif; font-weight:700; color:#241400; background:linear-gradient(180deg,#ffe566,#ffcc00); padding:8px 12px; font-size:14px}
   .appcard iframe{width:100%; height:74vh; border:0; background:#02061c}
   @media(min-width:760px){.appcard iframe{height:60vh}}
-  #ytPanel{position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none}
+  #ytPanel{position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; z-index:35; transition:opacity .25s ease}
+  body.yt-open #ytPanel{left:0; top:0; width:100%; height:100%; opacity:1; pointer-events:auto; background:#000}
   #ytFrameWrap{width:1px; height:1px}
+  body.yt-open #ytFrameWrap{width:100%; height:100%}
   #ytFrame{width:1px; height:1px; border:0}
+  body.yt-open #ytFrame{width:100%; height:100%}
 </style>
 </head>
 <body>
@@ -489,6 +492,7 @@
 
   <!-- ===== YouTube audio-only (hidden) ===== -->
   <div id="ytPanel" aria-hidden="true">
+    <button id="ytClose" aria-label="Fermer" style="position:absolute;top:10px;left:10px;z-index:36;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,215,0,.5);background:rgba(4,8,32,.7);color:#ffe566;font-size:18px;cursor:pointer">✕</button>
     <div id="ytFrameWrap"><iframe id="ytFrame" allow="autoplay; encrypted-media" loading="lazy"></iframe></div>
   </div>
 
@@ -995,6 +999,7 @@
       APPS.forEach(function(a){ var c=document.createElement('button'); c.className='chip alt'; c.textContent=a.e+' '+a.n; c.onclick=function(){ openAppsPanel([a]); }; appChips.appendChild(c); });
     }
     if(routeBtn) routeBtn.addEventListener('click', function(){ if(pendingRoute) window.open(pendingRoute,'_blank'); });
+    var ytc=document.getElementById('ytClose'); if(ytc) ytc.addEventListener('click', closeYt);
     var yb=document.getElementById('yesBtn'), nb=document.getElementById('noBtn'), ac=document.getElementById('appsClose');
     if(yb) yb.addEventListener('click', doOpen);
     if(nb) nb.addEventListener('click', declineOpen);
