@@ -897,13 +897,7 @@
       return;
     }
     if(/(يوتيوب|يوتوب|utub|youtube|أغني|اغني|أغنية|اغنية|غنية|غنوة|كليب|clip|chanson|chansons|musique|music|song|écout|ecout|نسمع|نستمع|نسمعو|نستمعو|سمعني|اسمعني|فرّجني|فرجني)/i.test(q)){
-      var yq=t, leadIn=/(?:chanson\s+d[e']\s*|chansons?\s+de\s*|musique\s+d[e']\s*|أغنية\s*(?:ديال|دي|ل|لـ)?\s*|اغنية\s*(?:ديال|دي|ل|لـ)?\s*|غنية\s*(?:ديال|دي|ل|لـ)?\s*|غنوة\s*(?:ديال|دي|ل|لـ)?\s*)([\s\S]+)$/i;
-      var mm=t.match(leadIn);
-      if(mm && mm[1] && mm[1].trim()) yq=mm[1].trim();
-      else{
-        yq=q.replace(/(شغّلي|شغلي|شغّل|شغل|لعب|العب|نحب نسمع|نحب نستمع|حاب نسمع|حابة نسمع|نسمع|نستمع|نسمعو|نستمعو|سمعني|اسمعني|فرّجني|فرجني|نشوف|نتفرج|فيديو|video|clip|كليب|play|watch|jouer|joue|joue[- ]moi|mets[- ]moi|mets|met|lance|écouter|ecouter|écoute|ecoute|je veux écouter|je veux ecouter|je veux entendre|je veux voir|regarder|من فضلك|عافاك|s'il te plait|stp|في اليوتيوب|في يوتيوب|على يوتيوب|يوتيوب|يوتوب|utub|youtube)/gi,' ').replace(/\s+/g,' ').trim();
-      }
-      playYoutube(yq||t); return;
+      playYoutube(t); return;
     }
     if(document.body.classList.contains('apps-open')) closeApps();
     setRoute(null);
