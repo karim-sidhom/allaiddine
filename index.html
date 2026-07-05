@@ -813,15 +813,20 @@
   function resumeListen(){ if(!asstShown || micDenied) return; startListen('free'); }
 
   function handleSpeech(t,mode){
-    if(mode==='confirm'){
-      var yes=/(نعم|اي|إيه|ايه|oui|yes|ok|باهي|افتح|حل)/i.test(t), no=/(لا|non|no|موش|بلا|خليها)/i.test(t);
-      if(yes && !no) doOpen(); else if(no) declineOpen();
-      else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
-      return;
+    try{
+      if(mode==='confirm'){
+        var yes=/(نعم|اي|إيه|ايه|oui|yes|ok|باهي|افتح|حل)/i.test(t), no=/(لا|non|no|موش|بلا|خليها)/i.test(t);
+        if(yes && !no) doOpen(); else if(no) declineOpen();
+        else speakText('قولّي «نعم» باش نحلّهملك، ولّا «لا».', function(){ startListen('confirm'); });
+        return;
+      }
+      var glang=guessLangFrom(t); if(glang) setSttLang(glang);
+      setCap('🎤 '+t);
+      handleIntent(t);
+    }catch(err){
+      try{ console.error('farhoum error:', err); }catch(e2){}
+      resumeListen();
     }
-    var glang=guessLangFrom(t); if(glang) setSttLang(glang);
-    setCap('🎤 '+t);
-    handleIntent(t);
   }
 
   function catsIn(q){ return CATS.filter(function(c){ for(var i=0;i<c.kw.length;i++){ if(q.indexOf(c.kw[i])>=0) return true; } return false; }); }
@@ -982,6 +987,17 @@
     if(!SR) setHint('متصفحك ما يدعمش التعرف على الصوت');
   }
   function hideAssistant(){ asstShown=false; if(asst) asst.classList.remove('on'); showConfirm(false); stopListen(); setCap(''); setRoute(null); pendingApps=null; closeApps(); }
+
+  // فيلي أمان: كان الميكروفون تقفل بالغلط، فرحوم يرجع يسمع بروحه
+  setInterval(function(){
+    try{
+      if(asstShown && !micDenied && !listening && curMode==='free'
+         && !document.body.classList.contains('apps-open') && !document.body.classList.contains('aslisten')
+         && !(genie && genie.classList.contains('talking'))){
+        startListen('free');
+      }
+    }catch(e){}
+  }, 4000);
 
   (function(){
     if(appChips){
